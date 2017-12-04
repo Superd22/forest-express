@@ -6,6 +6,7 @@ var jwt = require('jsonwebtoken');
 var SuperAgent = require('superagent');
 var path = require('../services/path');
 var AllowedUsersFinder = require('../services/allowed-users-finder');
+var uuidV1 = require('uuid/v1');
 
 module.exports = function (app, opts) {
 
@@ -49,6 +50,13 @@ module.exports = function (app, opts) {
           .get(forestUrl + '/api/environment/' + opts.envSecret + '/authExpirationTime')
           .end(function(error, result) {
             var authExpirationTime = result.body.authExpirationTime || 60 * 60 * 24 * 14;
+            var refreshTokenUuid = uuidV1();
+
+            var refreshToken = jwt.sign({
+              refreshToken: refreshTokenUuid
+            }, opts.authSecret, {
+              expiresIn: '14 days'
+            });
 
             var token = jwt.sign({
               id: user.id,
@@ -71,7 +79,23 @@ module.exports = function (app, opts) {
               expiresIn: authExpirationTime + ' seconds'
             });
 
-            response.send({ token: token });
+            SuperAgent
+              .post(forestUrl + '/api/users/setRefreshToken')
+              .set('Accept', 'application/json')
+              .send({
+                userId: user.id,
+                refreshToken: refreshTokenUuid
+              })
+              .end(function(err, res) {
+                console.log(res);
+              });
+
+            console.log('-----------------------');
+
+            response.send({
+              token: token,
+              refreshToken: refreshToken
+            });
           });
       })
       .catch(function (error) {
