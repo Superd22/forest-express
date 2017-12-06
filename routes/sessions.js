@@ -10,6 +10,18 @@ var uuidV1 = require('uuid/v1');
 
 module.exports = function (app, opts) {
 
+  function refreshAccessToken(request, response) {
+    response.json({});
+  }
+
+  function verifyAccessToken(request, response) {
+    var token = request.headers.authorization.split(' ')[1];
+    jwt.verify(token, opts.authSecret, function (err) {
+      if (err) { response.status(401).json({ error: err }); }
+      else { response.sendStatus(204); }
+    });
+  }
+
   function login(request, response) {
     new AllowedUsersFinder(request.body.renderingId, opts)
       .perform()
@@ -54,9 +66,7 @@ module.exports = function (app, opts) {
 
             var refreshToken = jwt.sign({
               refreshToken: refreshTokenUuid
-            }, opts.authSecret, {
-              expiresIn: '14 days'
-            });
+            }, opts.authSecret);
 
             var token = jwt.sign({
               id: user.id,
@@ -86,11 +96,7 @@ module.exports = function (app, opts) {
                 userId: user.id,
                 refreshToken: refreshTokenUuid
               })
-              .end(function(err, res) {
-                console.log(res);
-              });
-
-            console.log('-----------------------');
+              .end();
 
             response.send({
               token: token,
@@ -109,5 +115,7 @@ module.exports = function (app, opts) {
 
   this.perform = function () {
     app.post(path.generate('sessions', opts), login);
+    app.post(path.generate('refreshAccessToken', opts), refreshAccessToken);
+    app.get(path.generate('verifyAccessToken', opts), verifyAccessToken);
   };
 };
