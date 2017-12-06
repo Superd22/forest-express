@@ -36,8 +36,8 @@ function AllowedUsersFinder(renderingId, opts) {
                 'unlock. The envSecret and renderingId seems to be missing or inconsistent.');
             } else {
               logger.error('Cannot retrieve any users for the project ' +
-                'you\'re trying to unlock. An error occured in Forest API.',
-                error);
+              'you\'re trying to unlock. An error occured in Forest API.',
+              error);
             }
           }
           resolve(allowedUsers);
