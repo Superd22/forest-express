@@ -16,7 +16,8 @@ var forestUrl = process.env.FOREST_URL ||
 module.exports = function (app, opts) {
 
   function refreshAccessToken(request, response) {
-    new VerifyRefreshToken(opts, request.body)
+    var requestRefreshToken = jwt.verify(request.body.refreshToken, opts.authSecret).token;
+    new VerifyRefreshToken(opts, request.body, requestRefreshToken)
       .perform()
       .then(function (result) {
         if (result.status !== 204) {
@@ -50,8 +51,14 @@ module.exports = function (app, opts) {
           .then(function (user) {
             return new EnvironmentExpirationTime(opts)
               .perform()
-              .then(function (authExpirationTime) {
-                var refreshToken = uuidV1();
+              .then(function (body) {
+                var refreshTokenUuid = uuidV1();
+
+                var refreshToken = jwt.sign({
+                  token: refreshTokenUuid
+                }, opts.authSecret, {
+                  expiresIn: body.refreshTokenExpiration + ' seconds'
+                });
 
                 var token = jwt.sign({
                   id: user.id,
@@ -71,7 +78,7 @@ module.exports = function (app, opts) {
                     }
                   }
                 }, opts.authSecret, {
-                  expiresIn: authExpirationTime + ' seconds'
+                  expiresIn: body.accessTokenExpiration + ' seconds'
                 });
 
                 SuperAgent
@@ -80,7 +87,7 @@ module.exports = function (app, opts) {
                   .send({
                     userId: user.id,
                     renderingId: request.body.renderingId,
-                    refreshToken: refreshToken
+                    refreshToken: refreshTokenUuid
                   })
                   .end();
 
@@ -101,11 +108,7 @@ module.exports = function (app, opts) {
   }
 
   function verifyAccessToken(request, response) {
-    var token = request.headers.authorization.split(' ')[1];
-    jwt.verify(token, opts.authSecret, function (err) {
-      if (err) { response.status(401).json({ error: err }); }
-      else { response.sendStatus(204); }
-    });
+    response.sendStatus(204);
   }
 
   function login(request, response) {
@@ -144,8 +147,14 @@ module.exports = function (app, opts) {
         SuperAgent
           .get(forestUrl + '/forest/environment/' + opts.envSecret + '/authExpirationTime')
           .end(function(error, result) {
-            var authExpirationTime = result.body.authExpirationTime || 60 * 60 * 24 * 14;
-            var refreshToken = uuidV1();
+            var authExpirationTime = result.body.accessTokenExpiration;
+            var refreshTokenUuid = uuidV1();
+
+            var refreshToken = jwt.sign({
+              token: refreshTokenUuid
+            }, opts.authSecret, {
+              expiresIn: result.body.refreshTokenExpiration + ' seconds'
+            });
 
             var token = jwt.sign({
               id: user.id,
@@ -174,7 +183,7 @@ module.exports = function (app, opts) {
               .send({
                 userId: user.id,
                 renderingId: request.body.renderingId,
-                refreshToken: refreshToken
+                refreshToken: refreshTokenUuid
               })
               .end();
 
@@ -195,8 +204,7 @@ module.exports = function (app, opts) {
 
   this.perform = function () {
     app.post(path.generate('sessions', opts), login);
-    app.post('/oauthForest/refreshAccessToken', refreshAccessToken);
-    // app.post(path.generate('refreshAccessToken', opts), refreshAccessToken);
-    app.get('/oauthForest/verifyAccessToken', verifyAccessToken);
+    app.post('/forest/refreshAccessToken', refreshAccessToken);
+    app.get('/forest/verifyAccessToken', verifyAccessToken);
   };
 };

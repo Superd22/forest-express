@@ -2,7 +2,7 @@
 var P = require('bluebird');
 var request = require('superagent');
 
-function VerifyRefreshToken(opts, params) {
+function VerifyRefreshToken(opts, params, refreshToken) {
   this.perform = function () {
     return new P(function (resolve) {
       var forestUrl = process.env.FOREST_URL ||
@@ -14,7 +14,7 @@ function VerifyRefreshToken(opts, params) {
         .send({
           userId: params.userId,
           renderingId: params.renderingId,
-          refreshToken: params['refresh-token']
+          refreshToken: refreshToken
         })
         .end(function (error, result) {
           resolve(result);

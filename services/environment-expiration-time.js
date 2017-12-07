@@ -11,7 +11,7 @@ function EnvironmentExpirationTime(opts) {
       request
         .get(forestUrl + '/forest/environment/' + opts.envSecret + '/authExpirationTime')
         .end(function(error, result) {
-          resolve(result.body.authExpirationTime || 60 * 60 * 24 * 14);
+          resolve(result.body);
         });
     });
   };
