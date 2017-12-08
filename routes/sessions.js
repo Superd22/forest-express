@@ -28,7 +28,11 @@ module.exports = function (app, opts) {
           });
       })
       .catch(function (error) {
-        console.log(error);
+        var body;
+        if (error && error.message) {
+          body = { errors: [{ detail: error.message }] };
+        }
+        return response.status(401).send(body);
       });
   }
 

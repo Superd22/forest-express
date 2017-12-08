@@ -44,13 +44,13 @@ function UserAuthenticator(request, opts) {
       .then(function (user) {
         return new EnvironmentExpirationTime(opts)
           .perform()
-          .then(function (body) {
-            var authExpirationTime = body.accessTokenExpiration;
+          .then(function (EnvironmentReponse) {
+            var authExpirationTime = EnvironmentReponse.accessTokenExpiration;
             var refreshTokenUuid = uuidV1();
             var refreshToken = jwt.sign({
               token: refreshTokenUuid
             }, opts.authSecret, {
-              expiresIn: body.refreshTokenExpiration + ' seconds'
+              expiresIn: EnvironmentReponse.refreshTokenExpiration + ' seconds'
             });
             var token = jwt.sign({
               id: user.id,

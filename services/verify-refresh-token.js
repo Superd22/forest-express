@@ -5,11 +5,8 @@ var Request = require('superagent');
 function VerifyRefreshToken(opts, params, refreshToken) {
   this.perform = function () {
     return new P(function (resolve) {
-      var forestUrl = process.env.FOREST_URL ||
-        'https://forestadmin-server.herokuapp.com';
-
       Request
-        .post(forestUrl + '/forest/verifyToken')
+        .post(opts.forestUrl + '/forest/verifyToken')
         .set('Accept', 'application/json')
         .send({
           userId: params.userId,
