@@ -6,7 +6,7 @@ function VerifyRefreshToken(opts, params, refreshToken) {
   this.perform = function () {
     return new P(function (resolve) {
       Request
-        .post(opts.forestUrl + '/forest/verifyToken')
+        .post(opts.forestUrl + '/forest/verifyRefreshToken')
         .set('Accept', 'application/json')
         .send({
           userId: params.userId,
