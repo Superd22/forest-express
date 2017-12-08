@@ -1,6 +1,6 @@
 'use strict';
 var P = require('bluebird');
-var request = require('superagent');
+var Request = require('superagent');
 
 function VerifyRefreshToken(opts, params, refreshToken) {
   this.perform = function () {
@@ -8,7 +8,7 @@ function VerifyRefreshToken(opts, params, refreshToken) {
       var forestUrl = process.env.FOREST_URL ||
         'https://forestadmin-server.herokuapp.com';
 
-      request
+      Request
         .post(forestUrl + '/forest/verifyToken')
         .set('Accept', 'application/json')
         .send({
