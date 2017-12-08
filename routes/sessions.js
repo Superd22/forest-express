@@ -3,15 +3,12 @@
 var _ = require('lodash');
 var bcrypt = require('bcryptjs');
 var jwt = require('jsonwebtoken');
-var SuperAgent = require('superagent');
 var path = require('../services/path');
 var AllowedUsersFinder = require('../services/allowed-users-finder');
+var RefreshTokenSender = require('../services/refresh-token-sender');
 var VerifyRefreshToken = require('../services/verify-refresh-token');
 var EnvironmentExpirationTime = require('../services/environment-expiration-time');
 var uuidV1 = require('uuid/v1');
-
-var forestUrl = process.env.FOREST_URL ||
-  'https://forestadmin-server.herokuapp.com';
 
 module.exports = function (app, opts) {
 
@@ -81,15 +78,11 @@ module.exports = function (app, opts) {
                   expiresIn: body.accessTokenExpiration + ' seconds'
                 });
 
-                SuperAgent
-                  .post(forestUrl + '/forest/token')
-                  .set('Accept', 'application/json')
-                  .send({
-                    userId: user.id,
-                    renderingId: request.body.renderingId,
-                    refreshToken: refreshTokenUuid
-                  })
-                  .end();
+                new RefreshTokenSender(opts, {
+                  userId: user.id,
+                  renderingId: body.renderingId,
+                  refreshToken: refreshTokenUuid
+                }).perform();
 
                 response.send({
                   token: token,
@@ -144,16 +137,16 @@ module.exports = function (app, opts) {
           });
       })
       .then(function (user) {
-        SuperAgent
-          .get(forestUrl + '/forest/environment/' + opts.envSecret + '/authExpirationTime')
-          .end(function(error, result) {
-            var authExpirationTime = result.body.accessTokenExpiration;
+        return new EnvironmentExpirationTime(opts)
+          .perform()
+          .then(function (body) {
+            var authExpirationTime = body.accessTokenExpiration;
             var refreshTokenUuid = uuidV1();
 
             var refreshToken = jwt.sign({
               token: refreshTokenUuid
             }, opts.authSecret, {
-              expiresIn: result.body.refreshTokenExpiration + ' seconds'
+              expiresIn: body.refreshTokenExpiration + ' seconds'
             });
 
             var token = jwt.sign({
@@ -169,7 +162,7 @@ module.exports = function (app, opts) {
                 renderings: {
                   data: [{
                     type: 'renderings',
-                    id: request.body.renderingId
+                    id: body.renderingId
                   }]
                 }
               }
@@ -177,15 +170,11 @@ module.exports = function (app, opts) {
               expiresIn: authExpirationTime + ' seconds'
             });
 
-            SuperAgent
-              .post(forestUrl + '/forest/token')
-              .set('Accept', 'application/json')
-              .send({
-                userId: user.id,
-                renderingId: request.body.renderingId,
-                refreshToken: refreshTokenUuid
-              })
-              .end();
+            new RefreshTokenSender(opts, {
+              userId: user.id,
+              renderingId: body.renderingId,
+              refreshToken: refreshTokenUuid
+            }).perform();
 
             response.send({
               token: token,

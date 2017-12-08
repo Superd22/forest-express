@@ -89,6 +89,8 @@ exports.init = function (Implementation) {
   var app = express();
   var integrator;
 
+  opts.forestUrl = process.env.FOREST_URL || 'https://forestadmin-server.herokuapp.com';
+
   if (opts.secretKey) {
     logger.warn('DEPRECATION WARNING: The use of secretKey and authKey options ' +
     'is deprecated. Please use envSecret and authSecret instead.');
@@ -261,11 +263,8 @@ exports.init = function (Implementation) {
             }
           });
 
-          var forestUrl = process.env.FOREST_URL ||
-            'https://forestadmin-server.herokuapp.com';
-
           request
-            .post(forestUrl + '/forest/apimaps')
+            .post(opts.forestUrl + '/forest/apimaps')
             .send(apimap)
             .set('forest-secret-key', opts.envSecret)
             .end(function (error, result) {
@@ -310,7 +309,6 @@ exports.init = function (Implementation) {
 };
 
 exports.collection = function (name, opts) {
-  console.log('----');
   if (_.isEmpty(Schemas.schemas) && opts.modelsDir) {
     logger.error('Cannot customize your collection named "' + name +
       '" properly. Did you call the "collection" method in the /forest ' +
