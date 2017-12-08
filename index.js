@@ -8,6 +8,7 @@ var readdirAsync = P.promisify(fs.readdir);
 var cors = require('express-cors');
 var bodyParser = require('body-parser');
 var jwt = require('express-jwt');
+var Request = require('superagent');
 var ResourcesRoutes = require('./routes/resources');
 var AssociationsRoutes = require('./routes/associations');
 var StatRoutes = require('./routes/stats');
@@ -15,7 +16,6 @@ var SessionRoute = require('./routes/sessions');
 var ForestRoutes = require('./routes/forest');
 var Schemas = require('./generators/schemas');
 var JSONAPISerializer = require('jsonapi-serializer').Serializer;
-var request = require('superagent');
 var logger = require('./services/logger');
 var Integrator = require('./integrations');
 var errorHandler = require('./services/error-handler');
@@ -263,7 +263,7 @@ exports.init = function (Implementation) {
             }
           });
 
-          request
+          Request
             .post(opts.forestUrl + '/forest/apimaps')
             .send(apimap)
             .set('forest-secret-key', opts.envSecret)
