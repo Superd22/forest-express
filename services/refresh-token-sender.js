@@ -4,7 +4,7 @@ var Request = require('superagent');
 function RefreshTokenSender(opts, params) {
   this.perform = function () {
     Request
-      .post(opts.forestUrl + '/forest/refreshTokenToken')
+      .post(opts.forestUrl + '/forest/refreshToken')
       .set('Accept', 'application/json')
       .send(params)
       .end();
